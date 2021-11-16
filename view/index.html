@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日训练</title>
+</head>
+<style>
+    html,body{
+        height:100%;
+        width:100%;
+        font-size:48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+    }
+    #button_group{
+        display: flex;
+    }
+    #button_group button{
+        margin-right:10px;
+    }
+</style>
+<body >
+    <div id="button_group">
+        <button onclick="startDoIt()">start</button>
+        <button onclick="stopDoIt()">stop</button>
+    </div>
+    <p id="num" >第1轮</p>
+    <p id="step" >准备</p>
+</body>
+<script>
+    let config = [
+        {
+            name:"准备",
+            seconds:10
+        },
+        {
+            name:"后踢腿",
+            seconds:30
+        },
+        {
+            name:"休息",
+            seconds:6
+        },
+        {
+            name:"左右交替侧提膝",
+            seconds:60
+        },
+        {
+            name:"休息",
+            seconds:6
+        },
+        {
+            name:"胯下击掌",
+            seconds:60
+        },
+        {
+            name:"休息",
+            seconds:6
+        },
+        {
+            name:"左右交替侧提膝",
+            seconds:60
+        },
+        {
+            name:"休息",
+            seconds:30
+        }
+    ]
+    config = config.map(x=>{x.seconds = x.seconds;return x;})
+    let curPhase = {}
+    let countTime = 8,curTimes=1,curIndex=0;
+    let timer = null;
+    let dom = document.getElementById('step')
+    let doStatus = false
+    function comeOnDoIt(){
+        if( curIndex == config.length - 1){
+            curIndex = 0;
+            curTimes += 1
+            if(curTimes > countTime) {
+                speakStep(`锻炼结束，恭喜小宝贝`)
+                dom.innerHTML = "锻炼结束，恭喜小宝贝"
+                return;
+            }
+            document.getElementById('num').innerHTML =`第${curTimes}轮`
+            speakStep(`第${curTimes}轮`)
+        }else{
+            curIndex += 1
+            let item = config[curIndex];
+            speakStep(`${item.name}${item.seconds/2}秒`)
+        }
+        curPhase = {
+            ...config[curIndex],
+            // seconds:2
+        }
+        timeDown()
+    }
+    function timeDown(){
+        if(timer) clearTimeout(timer),timer = null;
+        if(curPhase.seconds <= 0){
+            this.comeOnDoIt()
+            return;
+        }
+        curPhase.seconds -= 2
+        timer = setTimeout(()=>{
+            if(!doStatus) return;
+            dom.innerHTML = `${curPhase.name}:${(curPhase.seconds+2)/2}s`
+            speakStep(`${(curPhase.seconds+2)/2}`)
+            timeDown()
+        },2000)
+    }
+    function speakStep(content){
+        let url = "http://192.168.31.141:3000/speak"
+        fetch(url,{
+            body:JSON.stringify({
+                content
+            }),
+            method:"POST",
+            headers:{
+                "content-type":"application/json"
+            }
+        }).then(headers=>{
+            return headers
+        }).then((res)=>{
+            console.log(res)
+        }).catch((err)=>{
+            console.log(err)
+        })
+    }
+    function stopDoIt(){
+        doStatus = false;
+
+    }
+    function startDoIt(){
+        doStatus = true;
+        curPhase = {
+            ...config[curIndex]
+        }
+        timeDown()
+    }
+</script>
+</html>
